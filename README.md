@@ -10,4 +10,4 @@ Python packages:
 ## Dependencies
 
 Docker images:
-- ownport/scrapy:latest
+- ownport/scrapy:latest, https://hub.docker.com/r/ownport/scrapy/
