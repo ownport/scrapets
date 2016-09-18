@@ -1,0 +1,19 @@
+sudo: false
+language: python
+
+notifications:
+  email: false
+
+env:
+  - PYTHONDONTWRITEBYTECODE=1
+
+python:
+  - "2.7"
+
+install:
+  - pip install ${PIP_OPTS} pytest
+  - pip install ${PIP_OPTS} pytest-cov
+
+script:
+  - pip install --editable .
+  - make test-all-with-coverage
