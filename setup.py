@@ -1,12 +1,12 @@
 from setuptools import setup
-from testsuites import __version__
+from scrapets import __version__
 
 setup(
-    name='scraplets',
+    name='scrapets',
     version=__version__,
-    py_modules=['scraplets'],
+    py_modules=['scrapets'],
     entry_points='''
         [console_scripts]
-        scraplets=scraplets.main:run
+        scrapets=scrapets.main:cli
     ''',
 )
