@@ -1,0 +1,6 @@
+
+class PathDoesNotExist(Exception):
+    pass
+
+
+    

@@ -1,29 +1,63 @@
 
-
-def fetch_by_url(url, path):
-
-    filename = os.path.join(path, sha256url(url))
-    resp = requests.get(url, stream=True)
-    if resp.status_code == 200:
-        with open(filename, 'wb') as f:
-            for chunk in resp.iter_content(1024):
-                f.write(chunk)
-        return {
-                'url': url,
-                'sha256/url': sha256url(url),
-                'sha256/file': sha256file(filename),
-                'pairtree/url': pairtree(sha256url(url)),
-                'pairtree/file': pairtree(sha256file(filename))
-            }
-    else:
-        return {}
+import os
 
 
-def fetch_by_urls(urls, path):
+from errors import PathDoesNotExist
 
-    with open(urls, 'r') as source:
-        for url in source:
-            url = url.strip()
-            if not url:
-                continue
-            yield json.dumps(fetch_by_url(url, path))
+from storage import utils
+from storage.fileobject import FileObject
+
+from packages import reqres
+
+DEFAULT_USER_AGENT='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0'
+
+
+class Fetcher():
+
+    def __init__(self, path, user_agent=DEFAULT_USER_AGENT):
+
+        self._user_agent = user_agent
+        if not path or not os.path.exists(path):
+            raise PathDoesNotExist("The path does not exist, %s" % path)
+        self._path = path
+
+    @property
+    def path(self):
+
+        return self._path
+
+
+    def fetch(self, source):
+        ''' fetch source
+        '''
+        result = ()
+        if isinstance(source, (str,unicode)):
+            result = self._fetch_by_url(source)
+        elif isinstance(source, (list, tuple)):
+            result = self._fetch_by_urls(source)
+        return result
+
+
+    def _fetch_by_url(self, url):
+
+        filename = os.path.join(self._path, utils.sha256str(url))
+        request = reqres.Request(url=url, headers={'User-Agent': self._user_agent})
+        resp = request.get().send(stream=True)
+        if resp.code == 200:
+            fo = FileObject(filename)
+            fo.write(resp.body)
+            return ({
+                    'url': url,
+                    'url/sha256': utils.sha256str(url),
+                    'url/pairtree': utils.pairtree(utils.sha256str(url)),
+                    'file/sha256': utils.sha256file(filename),
+                    'file/pairtree': utils.pairtree(utils.sha256file(filename))
+                },)
+        else:
+            return ()
+
+
+    def _fetch_by_urls(self, urls):
+
+        for url in [url.strip() for url in urls if url]:
+            yield self._fetch_by_url(url)[0]

@@ -1,23 +1,46 @@
 import __init__
 
+import os
 import sys
-import click
 
-def run():
+from packages import click
+from fetch import DEFAULT_USER_AGENT
 
-    print click
-    # import argparse
-    #
-    # parser = optparse.OptionParser()
-    # parser.add_option('-u', '--url', help='fetch file by url')
-    # parser.add_option('-l', '--url-list', help='fetch file by url list')
-    # (opts, args) = parser.parse_args()
-    #
-    # if opts.url:
-    #
-    #     print json.dumps(fetch_by_url(opts.url, path='tmp/'))
-    #
-    # elif opts.url_list:
-    #
-    #     for result in fetch_by_urls(opts.url_list, path='tmp/'):
-    #         print result
+CONTEXT_SETTINGS = dict(auto_envvar_prefix='SCRAPETS')
+
+
+@click.group(context_settings=CONTEXT_SETTINGS)
+def cli():
+    """A scrapets command line interface."""
+    pass
+
+
+@cli.command()
+@click.argument('url', nargs=-1)
+@click.option('--urls',
+                type=click.File('rb'),
+                help='fetch files by the list of urls')
+@click.option('--path',
+                default=os.getcwd(),
+                type=click.Path(exists=True),
+                help='the target directory, default: %s' % os.getcwd())
+@click.option('--user-agent',
+                default=DEFAULT_USER_AGENT,
+                help='User agent, default: %s' % DEFAULT_USER_AGENT)
+@click.pass_context
+def fetch(ctx, **opts):
+    """ Fetch operations
+    """
+
+    if not opts['url'] and not opts['urls']:
+        print(ctx.get_help())
+        sys.exit(1)
+
+    import fetch
+
+    fetcher = fetch.Fetcher(opts['path'], user_agent=opts['user_agent'])
+
+    if opts['url']:
+        print map(lambda u: fetcher.fetch(u.strip()), opts['url'])
+    if opts['urls']:
+        print map(lambda u: fetcher.fetch(u.strip()), opts['urls'].readlines())
