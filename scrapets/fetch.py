@@ -26,11 +26,14 @@ class Fetcher():
         return self._path
 
 
-    def fetch(self, url, pairtree=False):
+    def fetch(self, url, pairtree=False, meta='short'):
         ''' fetch url and store as file
 
         pairtree = False, the path to filename is sha256 hashsum from url, no subdirectories
         pairtree = True, the path to filename is the result from sha256 checksum from url
+
+        meta = short, returns url, url.sha256, file.path, status.code
+        meta = details, returns url, url.sha256, url.pairtree, file.path, file.sha256, file.pairtree, status.code
         '''
         filepath = utils.pairtree(utils.sha256str(url)) if pairtree else utils.sha256str(url)
         filepath = os.path.join(self._path, filepath)
@@ -39,24 +42,20 @@ class Fetcher():
 
         sha256url = utils.sha256str(url)
 
+        result = { 'url': url, 'url.sha256': sha256url, 'status.code': None, }
+
         if resp.code == 200:
             fo = FileObject(filepath)
             fo.write(resp.body)
 
-            sha256file = utils.sha256file(filepath)
-            return {
-                    'url': url,
-                    'url.sha256': sha256url,
-                    'url.pairtree': utils.pairtree(sha256url),
-                    'file.path': filepath,
-                    'file.sha256': sha256file,
-                    'file.pairtree': utils.pairtree(sha256file),
-                    'status.code': resp.code,
-                }
-        else:
-            return {
-                    'url': url,
-                    'status.code': resp.code,
-                    'url.sha256': sha256url,
-                    'url.pairtree': utils.pairtree(sha256url),
-            }
+            filemeta = fo.meta
+            result['file.path'] = filepath
+            if meta == 'detail':
+                result['file.sha256'] = filemeta['content.sha256']
+                result['file.pairtree'] = filemeta['content.pairtree']
+
+        if meta == 'detail':
+            result['url.pairtree'] = utils.pairtree(sha256url)
+        result['status.code'] = resp.code
+
+        return result
