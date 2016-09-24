@@ -48,13 +48,17 @@ class Fetcher():
             fo.write(resp.body)
             return ({
                     'url': url,
-                    'url/sha256': utils.sha256str(url),
-                    'url/pairtree': utils.pairtree(utils.sha256str(url)),
-                    'file/sha256': utils.sha256file(filename),
-                    'file/pairtree': utils.pairtree(utils.sha256file(filename))
+                    'url.sha256': utils.sha256str(url),
+                    'url.pairtree': utils.pairtree(utils.sha256str(url)),
+                    'file.sha256': utils.sha256file(filename),
+                    'file.pairtree': utils.pairtree(utils.sha256file(filename)),
+                    'status.code': resp.code,
                 },)
         else:
-            return ()
+            return ({
+                    'url': url,
+                    'status.code': resp.code,
+            },)
 
 
     def _fetch_by_urls(self, urls):
