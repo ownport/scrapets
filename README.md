@@ -6,6 +6,7 @@ scrapets: scraping snippets
 
 Python packages:
 - click, https://github.com/pallets/click
+- reqres, https://github.com/ownport/reqres
 
 ## Dependencies
 
