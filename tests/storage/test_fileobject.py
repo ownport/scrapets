@@ -45,13 +45,13 @@ def test_fileobject_meta(tmpdir):
     fo.write('fileobject-meta-content')
     assert fo.path == path
     assert fo.meta == {
-                        'path': path,
-                        'filename': 'fileobject-meta',
-                        'filename/sha256': 'd2088266c0fc064b249d1b9959c80d986cc72b377066ad80e7211837d57e6c09',
-                        'filename/pairtree': 'd2/08/d2088266c0fc064b249d1b9959c80d986cc72b377066ad80e7211837d57e6c09',
-                        'content/sha256': 'e7de0e8d1d59a0f01d7de63a9ed1948f93554bdf63d8f544655b5a89c2e2af1c',
-                        'content/pairtree': 'e7/de/e7de0e8d1d59a0f01d7de63a9ed1948f93554bdf63d8f544655b5a89c2e2af1c',
-                        'content/size': 23,
+                        'filename.path': path,
+                        'filename.name': 'fileobject-meta',
+                        'filename.sha256': 'd2088266c0fc064b249d1b9959c80d986cc72b377066ad80e7211837d57e6c09',
+                        'filename.pairtree': 'd2/08/d2088266c0fc064b249d1b9959c80d986cc72b377066ad80e7211837d57e6c09',
+                        'content.sha256': 'e7de0e8d1d59a0f01d7de63a9ed1948f93554bdf63d8f544655b5a89c2e2af1c',
+                        'content.pairtree': 'e7/de/e7de0e8d1d59a0f01d7de63a9ed1948f93554bdf63d8f544655b5a89c2e2af1c',
+                        'content.size': 23,
     }
 
 def test_fileobject_write_none(tmpdir):

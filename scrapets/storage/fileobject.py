@@ -27,13 +27,13 @@ class FileObject(object):
         filename_sha256 = utils.sha256str(filename)
         content_sha256 = utils.sha256file(self._path)
         return {
-            'path': self._path,
-            'filename': filename,
-            'filename/sha256': filename_sha256,
-            'filename/pairtree': utils.pairtree(filename_sha256),
-            'content/sha256': content_sha256,
-            'content/pairtree': utils.pairtree(content_sha256),
-            'content/size': os.stat(self._path).st_size,
+            'filename.path': self._path,
+            'filename.name': filename,
+            'filename.sha256': filename_sha256,
+            'filename.pairtree': utils.pairtree(filename_sha256),
+            'content.sha256': content_sha256,
+            'content.pairtree': utils.pairtree(content_sha256),
+            'content.size': os.stat(self._path).st_size,
         }
 
 
