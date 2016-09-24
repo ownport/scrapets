@@ -27,6 +27,9 @@ def cli():
 @click.option('--user-agent',
                 default=DEFAULT_USER_AGENT,
                 help='User agent, default: %s' % DEFAULT_USER_AGENT)
+@click.option('--pairtree/--no-pairtree',
+                default=False,
+                help='create pairtree structure in the target directory, default: turn off')
 @click.pass_context
 def fetch(ctx, **opts):
     """ Fetch operations
@@ -41,6 +44,6 @@ def fetch(ctx, **opts):
     fetcher = fetch.Fetcher(opts['path'], user_agent=opts['user_agent'])
 
     if opts['url']:
-        print map(lambda u: fetcher.fetch(u.strip()), opts['url'])
+        print map(lambda u: fetcher.fetch(u.strip(), pairtree=opts['pairtree']), opts['url'])
     if opts['urls']:
-        print map(lambda u: fetcher.fetch(u.strip()), opts['urls'].readlines())
+        print map(lambda u: fetcher.fetch(u.strip(), pairtree=opts['pairtree']), opts['urls'].readlines())
