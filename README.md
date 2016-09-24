@@ -4,6 +4,10 @@
 
 scrapets: scraping snippets
 
+## How-to install
+
+Just download `scrapets` file from Releases page https://github.com/ownport/scrapets/releases
+
 ## How-to use
 
 ```sh
