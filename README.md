@@ -4,6 +4,27 @@
 
 scrapets: scraping snippets
 
+## How-to use
+
+```sh
+$ ./bin/scrapets fetch
+Usage: scrapets fetch [OPTIONS] [URL]...
+
+  Fetch operations
+
+Options:
+  --urls FILENAME             fetch files by the list of urls
+  --path PATH                 the target directory, default:
+                              /media/data/github/scrapets
+  --user-agent TEXT           User agent, default: Mozilla/5.0 (X11; Ubuntu;
+                              Linux x86_64; rv:44.0) Gecko/20100101
+                              Firefox/44.0
+  --pairtree / --no-pairtree  create pairtree structure in the target
+                              directory, default: turn off
+  --help                      Show this message and exit.
+
+```
+
 ## Included
 
 Python packages:
