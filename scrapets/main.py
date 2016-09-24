@@ -5,6 +5,8 @@ import sys
 import json
 
 from packages import click
+
+from storage import utils
 from fetch import DEFAULT_USER_AGENT
 
 CONTEXT_SETTINGS = dict(auto_envvar_prefix='SCRAPETS')
@@ -29,6 +31,9 @@ def cli():
 @click.option('--urls',
                 type=click.File('rb'),
                 help='fetch files by the list of urls')
+@click.option('--index',
+                type=click.File('rw+'),
+                help='index file for storing metadata')
 @click.option('--path',
                 default=os.getcwd(),
                 type=click.Path(exists=True),
@@ -52,11 +57,28 @@ def fetch(ctx, **opts):
 
     import fetch
 
+    metadata_index = dict()
+    if opts['index']:
+        try:
+            for rec in opts['index'].readlines():
+                rec = json.loads(rec)
+                sha256url = rec.pop('url.sha256')
+                metadata_index[sha256url] = rec
+        except ValueError:
+            pass
+
     if opts['url']:
         urls = opts['url']
     elif opts['urls']:
         urls = opts['urls'].readlines()
 
+    urls = [u for u in urls if utils.sha256str(u) not in metadata_index]
+
     fetcher = fetch.Fetcher(opts['path'], user_agent=opts['user_agent'])
     for res in map(lambda u: fetcher.fetch(u.strip(), pairtree=opts['pairtree'], meta=opts['meta']), urls):
-        print json.dumps(res)
+
+        json_res = json.dumps(res)
+        opts['index'].write("%s\n" % json_res)
+        print json_res
+        sha256url = res.pop('url.sha256')
+        metadata_index[sha256url] = res
