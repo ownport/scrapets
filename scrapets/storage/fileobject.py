@@ -68,7 +68,7 @@ class FileObject(object):
             self.rmtemp()
             return
         else:
-            raise RuntimeError('Data: %s' % data)
+            raise RuntimeError('Unknown data format: [%s] %s' % (type(data), data))
 
 
     def rename(self, newpath):
