@@ -1,7 +1,6 @@
 
 import os
 
-
 from errors import PathDoesNotExist
 
 from storage import utils
@@ -27,41 +26,57 @@ class Fetcher():
         return self._path
 
 
-    def fetch(self, source):
-        ''' fetch source
+    def fetch(self, url, pairtree=False):
+        ''' fetch url to file
+
+        pairtree = False, the path to filename is sha256 hashsum from url, no subdirectories
+        pairtree = True, the path to filename is the result from sha256 checksum from url
         '''
         result = ()
-        if isinstance(source, (str,unicode)):
-            result = self._fetch_by_url(source)
-        elif isinstance(source, (list, tuple)):
-            result = self._fetch_by_urls(source)
+        if isinstance(url, (str,unicode)):
+            result = self._fetch_by_url(url, pairtree)
+        elif isinstance(url, (list, tuple)):
+            result = self._fetch_by_urls(url, pairtree)
         return result
 
 
-    def _fetch_by_url(self, url):
+    def _fetch_by_url(self, url, pairtree=False):
+        ''' fetch url and store as file
 
-        filename = os.path.join(self._path, utils.sha256str(url))
+        pairtree = False, the path to filename is sha256 hashsum from url, no subdirectories
+        pairtree = True, the path to filename is the result from sha256 checksum from url
+        '''
+        filepath = utils.pairtree(utils.sha256str(url)) if pairtree else utils.sha256str(url)
+        filepath = os.path.join(self._path, filepath)
         request = reqres.Request(url=url, headers={'User-Agent': self._user_agent})
         resp = request.get().send(stream=True)
+
+        sha256url = utils.sha256str(url)
+
         if resp.code == 200:
-            fo = FileObject(filename)
+            fo = FileObject(filepath)
             fo.write(resp.body)
+
+            sha256file = utils.sha256file(filepath)
             return ({
                     'url': url,
-                    'url.sha256': utils.sha256str(url),
-                    'url.pairtree': utils.pairtree(utils.sha256str(url)),
-                    'file.sha256': utils.sha256file(filename),
-                    'file.pairtree': utils.pairtree(utils.sha256file(filename)),
+                    'url.sha256': sha256url,
+                    'url.pairtree': utils.pairtree(sha256url),
+                    'file.path': filepath,
+                    'file.sha256': sha256file,
+                    'file.pairtree': utils.pairtree(sha256file),
                     'status.code': resp.code,
                 },)
         else:
             return ({
                     'url': url,
                     'status.code': resp.code,
+                    'url.sha256': sha256url,
+                    'url.pairtree': utils.pairtree(sha256url),
             },)
 
 
-    def _fetch_by_urls(self, urls):
+    def _fetch_by_urls(self, urls, pairtree=False):
 
         for url in [url.strip() for url in urls if url]:
-            yield self._fetch_by_url(url)[0]
+            yield self._fetch_by_url(url, pairtree)[0]

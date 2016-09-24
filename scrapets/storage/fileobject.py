@@ -74,6 +74,7 @@ class FileObject(object):
     def rename(self, newpath):
         ''' rename current path to new one
         '''
+        self.mkdirs()
         os.rename(self._path, newpath)
         self._path = newpath
 
@@ -89,6 +90,7 @@ class FileObject(object):
             self.rename(newpath)
 
         self._path = newpath
+        self.mkdirs()
         return self._path
 
 
@@ -103,4 +105,15 @@ class FileObject(object):
             self.rename(newpath)
 
         self._path = newpath
+        self.mkdirs()
         return self._path
+
+
+    def mkdirs(self, path=None):
+        ''' make directories is not exists
+        '''
+        path = self._path if not path else path
+        dirname = os.path.dirname(path)
+        if os.path.exists(dirname):
+            return
+        os.makedirs(dirname)
