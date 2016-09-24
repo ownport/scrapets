@@ -98,46 +98,36 @@ def test_fetch_path_does_not_exist():
 def test_fetch_single_url(tmpdir, monkeypatch):
 
     monkeypatch.setattr("scrapets.packages.reqres.Request", lambda url, headers: MockedRequest(url, headers))
-    path = str(tmpdir)
 
+    path = str(tmpdir)
     testcase_result = copy.copy(RESULT_STATUS_200)
     testcase_result['file.path'] = os.path.join(path, URLS[SUCCESS_URL]['sha256'])
 
     fetcher = Fetcher(path)
-    assert fetcher.fetch(SUCCESS_URL) == (testcase_result,)
+    assert fetcher.fetch(SUCCESS_URL) == testcase_result
 
 
 def test_fetch_single_url_pairtree(tmpdir, monkeypatch):
 
     monkeypatch.setattr("scrapets.packages.reqres.Request", lambda url, headers: MockedRequest(url, headers))
-    path = str(tmpdir)
 
+    path = str(tmpdir)
     testcase_result = copy.copy(RESULT_STATUS_200)
     testcase_result['file.path'] = os.path.join(path, URLS[SUCCESS_URL]['pairtree'])
 
     fetcher = Fetcher(path)
-    assert fetcher.fetch(SUCCESS_URL, pairtree=True) == (testcase_result,)
-
-
-def test_fetch_multiple_urls(tmpdir, monkeypatch):
-
-    monkeypatch.setattr("scrapets.packages.reqres.Request", lambda url, headers: MockedRequest(url, headers))
-    path = str(tmpdir)
-    fetcher = Fetcher(path)
-    assert fetcher.path == path
-
-    testcase_result = copy.copy(RESULT_STATUS_200)
-    testcase_result['file.path'] = os.path.join(path, URLS[SUCCESS_URL]['sha256'])
-
-    urls = [SUCCESS_URL for i in range(3)]
-    for r in fetcher.fetch(urls):
-        assert r == testcase_result
+    assert fetcher.fetch(SUCCESS_URL, pairtree=True) == testcase_result
 
 
 def test_fetch_return_error_result(tmpdir, monkeypatch):
 
     monkeypatch.setattr("scrapets.packages.reqres.Request", lambda url, headers: MockedRequest(url, headers))
-    path = str(tmpdir)
-    fetcher = Fetcher(path)
-    assert fetcher.path == path
-    assert fetcher.fetch(NONE_URL) == (RESULT_STATUS_404,)
+    fetcher = Fetcher(str(tmpdir))
+    assert fetcher.fetch(NONE_URL) == RESULT_STATUS_404
+
+
+def test_fetch_single_url_meta(tmpdir, monkeypatch):
+
+    monkeypatch.setattr("scrapets.packages.reqres.Request", lambda url, headers: MockedRequest(url, headers))
+    fetcher = Fetcher(str(tmpdir))
+    assert fetcher.fetch(NONE_URL) == RESULT_STATUS_404

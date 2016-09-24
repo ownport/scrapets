@@ -2,6 +2,7 @@ import __init__
 
 import os
 import sys
+import json
 
 from packages import click
 from fetch import DEFAULT_USER_AGENT
@@ -34,16 +35,17 @@ def cli():
 def fetch(ctx, **opts):
     """ Fetch operations
     """
-
     if not opts['url'] and not opts['urls']:
         print(ctx.get_help())
         sys.exit(1)
 
     import fetch
 
-    fetcher = fetch.Fetcher(opts['path'], user_agent=opts['user_agent'])
-
     if opts['url']:
-        print map(lambda u: fetcher.fetch(u.strip(), pairtree=opts['pairtree']), opts['url'])
-    if opts['urls']:
-        print map(lambda u: fetcher.fetch(u.strip(), pairtree=opts['pairtree']), opts['urls'].readlines())
+        urls = opts['url']
+    elif opts['urls']:
+        urls = opts['urls'].readlines()
+
+    fetcher = fetch.Fetcher(opts['path'], user_agent=opts['user_agent'])
+    for res in map(lambda u: fetcher.fetch(u.strip(), pairtree=opts['pairtree']), urls):
+        print json.dumps(res)

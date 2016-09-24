@@ -27,20 +27,6 @@ class Fetcher():
 
 
     def fetch(self, url, pairtree=False):
-        ''' fetch url to file
-
-        pairtree = False, the path to filename is sha256 hashsum from url, no subdirectories
-        pairtree = True, the path to filename is the result from sha256 checksum from url
-        '''
-        result = ()
-        if isinstance(url, (str,unicode)):
-            result = self._fetch_by_url(url, pairtree)
-        elif isinstance(url, (list, tuple)):
-            result = self._fetch_by_urls(url, pairtree)
-        return result
-
-
-    def _fetch_by_url(self, url, pairtree=False):
         ''' fetch url and store as file
 
         pairtree = False, the path to filename is sha256 hashsum from url, no subdirectories
@@ -58,7 +44,7 @@ class Fetcher():
             fo.write(resp.body)
 
             sha256file = utils.sha256file(filepath)
-            return ({
+            return {
                     'url': url,
                     'url.sha256': sha256url,
                     'url.pairtree': utils.pairtree(sha256url),
@@ -66,17 +52,11 @@ class Fetcher():
                     'file.sha256': sha256file,
                     'file.pairtree': utils.pairtree(sha256file),
                     'status.code': resp.code,
-                },)
+                }
         else:
-            return ({
+            return {
                     'url': url,
                     'status.code': resp.code,
                     'url.sha256': sha256url,
                     'url.pairtree': utils.pairtree(sha256url),
-            },)
-
-
-    def _fetch_by_urls(self, urls, pairtree=False):
-
-        for url in [url.strip() for url in urls if url]:
-            yield self._fetch_by_url(url, pairtree)[0]
+            }
