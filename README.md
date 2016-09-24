@@ -1,5 +1,7 @@
 # scrapets
 
+[![Build Status](https://travis-ci.org/ownport/scrapets.svg?branch=master)](https://travis-ci.org/ownport/scrapets)
+
 scrapets: scraping snippets
 
 ## Included
