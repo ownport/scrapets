@@ -3,6 +3,10 @@ PROJECT_NAME_BIN ?= scrapets
 PROJECT_NAME_SRC ?= scrapets
 
 clean:
+	@ echo "[INFO] Cleaning directory:" $(shell pwd)/.local-ci
+	@ rm -rf $(shell pwd)/.local-ci
+	@ echo "[INFO] Cleaning directory:" $(shell pwd)/scrapets.egg-info
+	@ rm -rf $(shell pwd)/scrapets.egg-info
 	@ echo "[INFO] Cleaning directory:" $(shell pwd)/bin
 	@ rm -rf $(shell pwd)/bin
 	@ echo "[INFO] Cleaning files: *.pyc"
@@ -19,3 +23,12 @@ compile: clean
 		cat bin/$(PROJECT_NAME_BIN).zip >> bin/$(PROJECT_NAME_BIN) && \
 		rm bin/$(PROJECT_NAME_BIN).zip && \
 		chmod a+x bin/$(PROJECT_NAME_BIN)
+
+test-all: clean
+	@ py.test
+
+test-all-with-coverage: clean
+		@ py.test --cov=scrapets --cov-report term-missing --cov-config=.coveragerc
+
+run-local-ci: clean
+	local-ci -r $(shell pwd) -s .local-ci.yml
