@@ -1,6 +1,4 @@
 
-import pytest
-
 from scrapets import extract
 
 PAGE = '''
@@ -14,6 +12,9 @@ PAGE = '''
     <img src="img_link2">
     <a href="alink3">Link3</a>
     <img src="img_link3">
+
+    <img src="img_link3"/>
+    <a href="alink1">
 </body>
 </html>
 '''
