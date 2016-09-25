@@ -36,7 +36,7 @@ def cli():
 @click.option('--meta', default='short', help='format or metadata. Possible values: short, detail. Default: short')
 @click.pass_context
 def fetch(ctx, **opts):
-    """ Fetch operations
+    """ fetch operations
     """
     if not opts['url'] and not opts['urls']:
         print(ctx.get_help())
@@ -70,3 +70,41 @@ def fetch(ctx, **opts):
             opts['index'].write("%s\n" % json_res)
         sha256url = res.pop('url.sha256')
         metadata_index[sha256url] = res
+
+
+@cli.command()
+@click.option('--file', type=click.File('rb'), help='the path to the file for processing')
+@click.option('--directory', type=click.Path(exists=True), help='the path to the directory for processing')
+@click.option('--filter', help='regular experssion for url filtering ')
+@click.pass_context
+def linkextractor(ctx, **opts):
+    ''' link extractor
+    '''
+    if not opts['file'] and not opts['directory']:
+        print(ctx.get_help())
+        sys.exit(1)
+
+    import re
+    import extract
+
+    URLFILTER = None
+    if opts['filter']:
+        URLFILTER = re.compile(opts['filter'])
+
+    if opts['file']:
+        le = extract.LinkExtractor()
+        le.feed(opts['file'].read().decode('utf-8'))
+        for link in filter(lambda u: URLFILTER.search(u) if URLFILTER else True, le.links):
+            print link
+
+    elif opts['directory']:
+        le = extract.LinkExtractor()
+        for root, dirs, files in os.walk(opts['directory']):
+            for _file in files:
+                try:
+                    path = os.path.join(root, _file)
+                    le.feed(open(path).read().decode('utf-8'))
+                    for link in filter(lambda u: URLFILTER.search(u) if URLFILTER else True, le.links):
+                        print link
+                except Exception, err:
+                    print >> sys.stderr, "[ERROR] Cannot process the file, %s" % (path,)
