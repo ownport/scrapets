@@ -44,6 +44,18 @@ Docker images:
 
 ## For developers
 
+to compile the project into the binary artifact
+``` sh
+$ make compile
+make compile
+[INFO] Cleaning directory: /media/d1/svc/github/scrapets/.local-ci
+[INFO] Cleaning directory: /media/d1/svc/github/scrapets/scrapets.egg-info
+[INFO] Cleaning directory: /media/d1/svc/github/scrapets/bin
+[INFO] Cleaning files: *.pyc
+[INFO] Cleaning files: .coverage
+[INFO] Compiling to binary, scrapets
+```
+
 to run test cases you need to have installed and configured:
 - docker, https://www.docker.com/
 - local-ci, https://github.com/ownport/local-ci
