@@ -13,7 +13,12 @@ python:
 install:
   - pip install ${PIP_OPTS} pytest
   - pip install ${PIP_OPTS} pytest-cov
+  - pip install codecov
 
 script:
   - pip install --editable .
   - make test-all-with-coverage
+
+after_success:
+  - codecov
+  
