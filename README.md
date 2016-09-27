@@ -1,6 +1,7 @@
 # scrapets
 
 [![Build Status](https://travis-ci.org/ownport/scrapets.svg?branch=master)](https://travis-ci.org/ownport/scrapets)
+[![Codecov branch](https://img.shields.io/codecov/c/github/ownport/scrapets/master.svg)]()
 
 scrapets: scraping snippets
 
