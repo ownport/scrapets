@@ -77,7 +77,7 @@ def fetch(ctx, **opts):
 @click.option('--directory', type=click.Path(exists=True), help='the path to the directory for processing')
 @click.option('--filter', help='regular experssion for url filtering ')
 @click.pass_context
-def linkextractor(ctx, **opts):
+def linkextract(ctx, **opts):
     ''' link extractor
     '''
     if not opts['file'] and not opts['directory']:

@@ -1,8 +1,8 @@
 # Link extractor operations
 
 ```sh
-./bin/scrapets linkextractor --help
-Usage: scrapets linkextractor [OPTIONS]
+./bin/scrapets linkextract --help
+Usage: scrapets linkextract [OPTIONS]
 
   link extractor
 

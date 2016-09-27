@@ -14,7 +14,7 @@ Just download `scrapets` file from Releases page https://github.com/ownport/scra
 Please follow instructions
 
 - docs/fetch.md
-- docs/linkextractor.md
+- docs/linkextract.md
 
 ## Included
 
