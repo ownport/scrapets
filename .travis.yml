@@ -13,7 +13,7 @@ python:
 install:
   - pip install ${PIP_OPTS} pytest
   - pip install ${PIP_OPTS} pytest-cov
-  - pip install codecov
+  - pip install ${PIP_OPTS} codecov
 
 script:
   - pip install --editable .
@@ -21,4 +21,3 @@ script:
 
 after_success:
   - codecov
-  
