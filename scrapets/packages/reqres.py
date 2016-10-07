@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import sys
 import json
@@ -6,7 +7,7 @@ import urllib
 import urllib2
 import urlparse
 
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 class HTTPException(Exception):
 
@@ -37,6 +38,8 @@ class Request(object):
     def __init__(self, url, headers={}, timeout=60):
 
         self._url = url
+        if isinstance(url, unicode):
+            self._url.encode('utf-8')
         self._opener = urllib2.build_opener(urllib2.HTTPHandler)
         self._headers = headers
         self._request = None
