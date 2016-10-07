@@ -108,3 +108,35 @@ def linkextract(ctx, **opts):
                         print link
                 except Exception, err:
                     print >> sys.stderr, "[ERROR] Cannot process the file, %s" % (path,)
+
+@cli.command()
+@click.option('--action', type=click.Choice(['select', 'remove']), help='content processing action')
+# @click.option('--xpath', help='xpath for the action')
+@click.option('--selector', help='Selector for the action')
+@click.option('--file', type=click.File('rb'), help='the path to the file for processing')
+@click.option('--directory', type=click.Path(exists=True), help='the path to the directory for processing')
+@click.pass_context
+def content(ctx, **opts):
+    ''' content processing
+    '''
+    if not opts['file'] and not opts['directory']:
+        print(ctx.get_help())
+        sys.exit(1)
+
+    import content
+
+    if opts['file']:
+        cntnt = content.CCSSelectParser(opts['file'].read())
+        if opts['action'] == 'select':
+            print cntnt.select(opts['selector'])
+        elif opts['action'] == 'remove':
+            print cntnt.remove(opts['selector'])
+
+    elif opts['directory']:
+        for root, dirs, files in os.walk(opts['directory']):
+            for _file in files:
+                try:
+                    path = os.path.join(root, _file)
+                    cntnt = content.Content(open(path).read())
+                except Exception, err:
+                    print >> sys.stderr, "[ERROR] Cannot process the file, %s" % (path,)
