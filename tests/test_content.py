@@ -2,6 +2,7 @@
 import pytest
 
 from scrapets import content
+from scrapets.packages import bs4
 
 CONTENT = '''
 <html>
@@ -77,6 +78,19 @@ def test_ccsselectparser_select():
     ]
     assert cntnt.select('p a[href="link5"]') == ['<a href="link5">Link5</a>',]
     assert cntnt.select('p > a[href="link5"]') == ['<a href="link5">Link5</a>',]
+
+
+def test_ccsselectparser_select_attrs():
+
+    cntnt = content.CCSSelectParser(CONTENT)
+    assert cntnt.select('a', lambda a: a.get('href')) == ['link1', 'link2', 'link3', 'link4', 'link5', 'link6']
+    assert cntnt.select('p', lambda p: p.string) == ['Test content', None]
+    assert cntnt.select('title', lambda t: t.string) == ['Test content']
+
+def test_ccsselectparser_select_not_html():
+
+    cntnt = content.CCSSelectParser(CONTENT)
+    assert map(lambda e: type(e), cntnt.select('title', html=False)) == [bs4.element.Tag,]
 
 
 def test_ccsselectparser_remove():
