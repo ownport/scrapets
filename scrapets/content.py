@@ -61,10 +61,18 @@ class CCSSelectParser(BaseParser):
         return unicode(self._soup)
 
 
-    def select(self, criteria):
+    def select(self, criteria, func=None, html=True):
         ''' select content by criteria
         '''
-        return [unicode(res) for res in self._soup.select(criteria)]
+        print criteria, html, func
+        if html and not func:
+            return [unicode(res) for res in self._soup.select(criteria)]
+
+        if not html and not func:
+            return [res for res in self._soup.select(criteria)]
+
+        if func:
+            return [func(res) for res in self._soup.select(criteria)]
 
 
     def remove(self, criteria):
