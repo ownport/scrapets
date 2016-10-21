@@ -19,6 +19,33 @@ CONTENT = '''
 </html>
 '''
 
+ARTICLE = '''
+<article class="post" id="post-001">
+    <div class="thumbnail">
+        <a href="http://links.com/1/" rel="bookmark">
+            <img alt="thumbnail1.jpeg" class="thumbnail-image" height="100" src="http://images.com/123.jpeg" width="100"/>
+        </a>
+    </div>
+    <div class="entry">
+        <header class="entry-header">
+            <h2 class="entry-title">
+                <a href="http://entries.com/entry1" rel="bookmark">Entry</a>
+            </h2>
+            <div class="entry-meta">
+                <span class="author vcard">
+                    <h5 class="entry-author">By:
+                        <a href="http://authors.com/author/John/" rel="tag">John</a>
+                    </h5>
+                </span>
+            </div>
+        </header>
+        <div class="entry-summary">
+            <p>Summary</p>
+        </div>
+    </div>
+</article>
+'''
+
 def test_bs_head():
 
     soup = BS(CONTENT, builder=HTMLParserTreeBuilder())
