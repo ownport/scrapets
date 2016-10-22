@@ -64,7 +64,6 @@ class CCSSelectParser(BaseParser):
     def select(self, criteria, func=None, html=True):
         ''' select content by criteria
         '''
-        print criteria, html, func
         if html and not func:
             return [unicode(res) for res in self._soup.select(criteria)]
 
