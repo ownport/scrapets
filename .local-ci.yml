@@ -4,8 +4,7 @@ env:
   - PIP_OPTS="--index-url=http://${LOCAL_REPOS_HOST}/repo/pypi/simple/ --trusted-host=${LOCAL_REPOS_HOST}"
 
 docker-images:
-  python:2.7: ownport/python-dev:2.7
-  python:3.5: ownport/python-dev:3.5
+  python:2.7: ownport/scrapets-dev-env:py2.7
 
 docker-opts:
   name: scrapets-local-ci
