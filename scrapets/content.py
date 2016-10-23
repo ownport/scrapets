@@ -4,6 +4,24 @@ import xml.etree.ElementTree as ET
 from packages.bs4 import BeautifulSoup as BS4
 from packages.bs4.builder._htmlparser import HTMLParserTreeBuilder
 
+from packages import yaml
+
+
+def parse_selector(value):
+
+    if not value:
+        return None, None
+
+    if value.find('::') >= 0:
+        selector, func = value.split('::', 1)
+        func = eval(func)
+    else:
+        selector = value
+        func = None
+
+    return selector, func
+
+
 
 class BaseParser(object):
 
@@ -61,17 +79,23 @@ class CCSSelectParser(BaseParser):
         return unicode(self._soup)
 
 
-    def select(self, criteria, func=None, html=True):
+    def select(self, criteria, func=None):
         ''' select content by criteria
-        '''
-        if html and not func:
-            return [unicode(res) for res in self._soup.select(criteria)]
 
-        if not html and not func:
-            return [res for res in self._soup.select(criteria)]
+        func - if not None, perform func call for all selections
+        html - if True, for each selection will be applied unicode()
+        merge - if True, return all selections as single BeautifulSoup instance
+        '''
+        result = [r for r in self._soup.select(criteria)]
 
         if func:
-            return [func(res) for res in self._soup.select(criteria)]
+            result = map(lambda r: func(r), result)
+
+        result = map(lambda r: unicode(r), result)
+        self._soup = BS4('\n'.join(result), builder=HTMLParserTreeBuilder())
+
+        return self
+
 
 
     def remove(self, criteria):
@@ -80,3 +104,37 @@ class CCSSelectParser(BaseParser):
         for res in self._soup.select(criteria):
             res.decompose()
         return self
+
+
+    def transform(self, rules):
+        ''' transform content according to rules
+        '''
+        _rules = yaml.load(rules)
+        if not 'rules' in _rules:
+            raise RuntimeError('Rules section is missed in rules file')
+
+        for rule in _rules['rules']:
+            if 'select' in rule:
+                self.select(*parse_selector(rule['select']['selector']))
+                continue
+            if 'remove' in rule:
+                self.remove(rule['remove']['selector'])
+                continue
+
+        return self
+
+
+    def fields(self, rules):
+        ''' extract info from the content and return key/values
+        '''
+        _rules = yaml.load(rules)
+        if not 'fields' in _rules:
+            raise RuntimeError('Fields section is missed in rules file')
+
+        _orig_soup = self._soup
+        result = dict()
+        for rule in _rules['fields']:
+            criteria, func = parse_selector(rule['selector'])
+            result[rule['name']] = unicode(self.select(criteria, func))
+            self._soup = _orig_soup
+        return result
