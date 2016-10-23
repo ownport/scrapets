@@ -3,6 +3,7 @@ import pytest
 
 from scrapets import content
 from scrapets.packages import bs4
+from scrapets.packages import yaml
 
 CONTENT = '''
 <html>
@@ -19,6 +20,15 @@ CONTENT = '''
     </p>
 </body>
 </html>
+'''
+
+TRANSFORM_RULES = '''
+rules:
+- name: remove title
+  select:
+    selector: body > p
+- remove:
+    selector: 'a'
 '''
 
 #
@@ -69,28 +79,35 @@ def test_ccsselectparser_create():
 def test_ccsselectparser_select():
 
     cntnt = content.CCSSelectParser(CONTENT)
-    assert cntnt.select('head') == ['<head><title>Test content</title></head>',]
-    assert cntnt.select('a[href=link1]') == ['<a href="link1">Link1</a>',]
-    assert cntnt.select('a[href="link1"]') == ['<a href="link1">Link1</a>',]
-    assert cntnt.select('a') == [
-            '<a href="link1">Link1</a>', '<a href="link2">Link2</a>', '<a href="link3">Link3</a>',
-            '<a href="link4">Link4</a>', '<a href="link5">Link5</a>', '<a href="link6">Link6</a>',
-    ]
-    assert cntnt.select('p a[href="link5"]') == ['<a href="link5">Link5</a>',]
-    assert cntnt.select('p > a[href="link5"]') == ['<a href="link5">Link5</a>',]
+    assert unicode(cntnt.select('head')) == u'<head><title>Test content</title></head>'
+
+    cntnt = content.CCSSelectParser(CONTENT)
+    assert unicode(cntnt.select('a[href=link1]')) == u'<a href="link1">Link1</a>'
+
+    cntnt = content.CCSSelectParser(CONTENT)
+    assert unicode(cntnt.select('a[href="link1"]')) == u'<a href="link1">Link1</a>'
+
+    cntnt = content.CCSSelectParser(CONTENT)
+    assert unicode(cntnt.select('a')) == u'\n'.join(('<a href="link1">Link1</a>', '<a href="link2">Link2</a>', '<a href="link3">Link3</a>',
+                                         '<a href="link4">Link4</a>', '<a href="link5">Link5</a>', '<a href="link6">Link6</a>'))
+
+    cntnt = content.CCSSelectParser(CONTENT)
+    assert unicode(cntnt.select('p a[href="link5"]')) == u'<a href="link5">Link5</a>'
+
+    cntnt = content.CCSSelectParser(CONTENT)
+    assert unicode(cntnt.select('p > a[href="link5"]')) == u'<a href="link5">Link5</a>'
 
 
 def test_ccsselectparser_select_attrs():
 
     cntnt = content.CCSSelectParser(CONTENT)
-    assert cntnt.select('a', lambda a: a.get('href')) == ['link1', 'link2', 'link3', 'link4', 'link5', 'link6']
-    assert cntnt.select('p', lambda p: p.string) == ['Test content', None]
-    assert cntnt.select('title', lambda t: t.string) == ['Test content']
-
-def test_ccsselectparser_select_not_html():
+    assert unicode(cntnt.select('a', lambda a: a.get('href'))) == '\n'.join(['link1', 'link2', 'link3', 'link4', 'link5', 'link6'])
 
     cntnt = content.CCSSelectParser(CONTENT)
-    assert map(lambda e: type(e), cntnt.select('title', html=False)) == [bs4.element.Tag,]
+    assert unicode(cntnt.select('p', lambda p: p.string)) == u'Test content\nNone'
+
+    cntnt = content.CCSSelectParser(CONTENT)
+    assert unicode(cntnt.select('title', lambda t: t.string)) == u'Test content'
 
 
 def test_ccsselectparser_remove():
@@ -102,3 +119,16 @@ def test_ccsselectparser_remove():
     cntnt = cntnt.remove('body')
     assert str(cntnt).replace('\n', '') == '<html></html>'
     assert unicode(cntnt).replace(u'\n', u'') == u'<html></html>'
+
+
+def test_ccsselectparser_transform():
+
+    cntnt = content.CCSSelectParser(CONTENT)
+    cntnt = cntnt.transform(TRANSFORM_RULES)
+    assert unicode(cntnt).replace('\n', '') == u'<p>Test content</p><p></p>'
+
+# def test_ccsselectparser_fields():
+#
+#     rules = yaml.load(TRANSFORM_RULES)
+#     cntnt = content.CCSSelectParser(CONTENT)
+#     assert False
