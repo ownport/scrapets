@@ -1,5 +1,7 @@
 # Article metadata
 
+- article url:
+- article url hash: sha256 hash of the article url
 - title
 - meta
     - description: meta description field in HTML source
@@ -14,7 +16,29 @@
 - video: the list of videos founded in the article: youtube, ...
 - links: the list of links in the main section of article
 - authors: author names
-- article url:
-- article url hash: sha256 hash of the article url
 - publish date: the publish day when the article was published
 - additional data: a dict contains a custom data extractions
+
+# Book metadata
+
+- book url
+- book url hash
+- title
+- subtitle
+- authors
+- isbn
+- publisher
+- format
+- pub data
+- description
+- keywords or tags or category
+- language
+- pages
+- cover image urls
+- file size
+
+# Image metadata
+
+- image url
+- image url hash
+- title
