@@ -18,6 +18,21 @@ def show_version(ctx, param, value):
     ctx.exit()
 
 
+def show_help(ctx):
+    print(ctx.get_help())
+    sys.exit(1)
+
+
+def walk(path):
+
+    if os.path.isfile(path):
+        yield path
+    elif os.path.isdir(path):
+        for root, _, files in os.walk(path):
+            for _file in files:
+                yield os.path.join(root, _file)
+
+
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.option('--version', is_flag=True, callback=show_version,
                 expose_value=False, is_eager=True, help='Show version')
@@ -39,8 +54,7 @@ def fetch(ctx, **opts):
     """ fetch operations
     """
     if not opts['url'] and not opts['urls']:
-        print(ctx.get_help())
-        sys.exit(1)
+        show_help(ctx)
 
     import fetch
 
@@ -49,6 +63,8 @@ def fetch(ctx, **opts):
         try:
             for rec in opts['index'].readlines():
                 rec = json.loads(rec)
+                if rec[u'status.code'] != 200:
+                    continue
                 sha256url = rec.pop('url.sha256')
                 metadata_index[sha256url] = rec
         except ValueError:
@@ -73,16 +89,14 @@ def fetch(ctx, **opts):
 
 
 @cli.command()
-@click.option('--file', type=click.File('rb'), help='the path to the file for processing')
-@click.option('--directory', type=click.Path(exists=True), help='the path to the directory for processing')
+@click.option('--path', type=click.Path(exists=True), help='the path to the file or directory for processing')
 @click.option('--filter', help='regular experssion for url filtering ')
 @click.pass_context
 def linkextract(ctx, **opts):
     ''' link extractor
     '''
-    if not opts['file'] and not opts['directory']:
-        print(ctx.get_help())
-        sys.exit(1)
+    if not opts['path']:
+        show_help(ctx)
 
     import re
     import extract
@@ -91,63 +105,54 @@ def linkextract(ctx, **opts):
     if opts['filter']:
         URLFILTER = re.compile(opts['filter'])
 
-    if opts['file']:
-        le = extract.LinkExtractor()
-        le.feed(opts['file'].read().decode('utf-8'))
-        for link in filter(lambda u: URLFILTER.search(u) if URLFILTER else True, le.links):
-            print link
+    le = extract.LinkExtractor()
+    for path in walk(opts['path']):
+        try:
+            le.feed(open(path).read().decode('utf-8'))
+            for link in filter(lambda u: URLFILTER.search(u) if URLFILTER else True, le.links):
+                print link
+        except Exception, err:
+            print >> sys.stderr, "[ERROR] Cannot process the file, %s" % (path,)
 
-    elif opts['directory']:
-        le = extract.LinkExtractor()
-        for root, dirs, files in os.walk(opts['directory']):
-            for _file in files:
-                try:
-                    path = os.path.join(root, _file)
-                    le.feed(open(path).read().decode('utf-8'))
-                    for link in filter(lambda u: URLFILTER.search(u) if URLFILTER else True, le.links):
-                        print link
-                except Exception, err:
-                    print >> sys.stderr, "[ERROR] Cannot process the file, %s" % (path,)
 
 @cli.command()
-@click.option('--action', type=click.Choice(['select', 'remove']), help='content processing action')
+@click.option('--action', type=click.Choice(['select', 'remove', 'transform', 'fields']), help='content processing action')
 # @click.option('--xpath', help='xpath for the action')
 @click.option('--selector', help='Selector for the action, the format: <ccs selector>::<lambda func>')
-@click.option('--file', type=click.File('rb'), help='the path to the file for processing')
-@click.option('--directory', type=click.Path(exists=True), help='the path to the directory for processing')
+@click.option('--rules', help='The rules for actions "transform" and "fields", yaml file')
+@click.option('--path', type=click.Path(exists=True), help='the path to the file or directory for processing')
 @click.pass_context
 def content(ctx, **opts):
     ''' content processing
     '''
-    if not opts['file'] and not opts['directory']:
-        print(ctx.get_help())
-        sys.exit(1)
+    def process(action, path, rules=None, selector=None, func=None):
+
+        cntnt = content.CCSSelectParser(open(path).read())
+        if action == 'select':
+            print json.dumps(unicode(cntnt.select(selector, func)))
+        elif action == 'remove':
+            print json.dumps(unicode(cntnt.remove(selector)))
+        elif action == 'transform':
+            print json.dumps(unicode(cntnt.transform(rules)))
+        elif action == 'fields':
+            print json.dumps(unicode(cntnt.fields(rules)))
+
+    if not opts['path']:
+        show_help(ctx)
+    if opts['action'] in ('select', 'remove') and not opts['selector']:
+        show_help(ctx)
+    if opts['action'] in ('transform', 'fields') and not opts['rules']:
+        show_help(ctx)
 
     import content
 
-    if opts['selector'].find('::') >= 0:
-        selector, func = opts['selector'].split('::', 1)
-        func = eval(func)
-    else:
-        selector = opts['selector']
-        func = None
+    rules = None
+    if os.path.exists(opts['rules']):
+        rules = open(opts['rules']).read()
 
-    if opts['file']:
-        cntnt = content.CCSSelectParser(opts['file'].read())
-        if opts['action'] == 'select':
-            print json.dumps(cntnt.select(selector, func))
-        elif opts['action'] == 'remove':
-            print cntnt.remove(selector)
-
-    elif opts['directory']:
-        for root, dirs, files in os.walk(opts['directory']):
-            for _file in files:
-                try:
-                    path = os.path.join(root, _file)
-                    cntnt = content.CCSSelectParser(open(path).read())
-                    if opts['action'] == 'select':
-                        print json.dumps(cntnt.select(selector, func))
-                    elif opts['action'] == 'remove':
-                        print cntnt.remove(selector)
-                except Exception, err:
-                    print >> sys.stderr, "[ERROR] Cannot process the file, %s. Error: %s" % (path, err)
+    for path in walk(opts['path']):
+        try:
+            selector, func = content.parse_selector(opts['selector'])
+            process(opts['action'], path, rules=rules, selector=selector, func=func)
+        except Exception, err:
+            print >> sys.stderr, "[ERROR] Cannot process the file, %s. Error: %s" % (path, err)
