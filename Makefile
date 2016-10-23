@@ -14,6 +14,8 @@ clean:
 	@ echo "[INFO] Cleaning files: .coverage"
 	@ rm -rf $(shell pwd)/.coverage
 
+build-dev-docker-image:
+	@ docker build --tag ownport/scrapets-dev-env:py2.7 . 
 
 compile: clean
 	@ echo "[INFO] Compiling to binary, $(PROJECT_NAME_BIN)"
