@@ -1,140 +1,125 @@
 
-import xml.etree.ElementTree as ET
-
-from packages.bs4 import BeautifulSoup as BS4
-from packages.bs4.builder._htmlparser import HTMLParserTreeBuilder
+from lxml import html
 
 from packages import yaml
 
-
-def parse_selector(value):
-
-    if not value:
-        return None, None
-
-    if value.find('::') >= 0:
-        selector, func = value.split('::', 1)
-        func = eval(func)
-    else:
-        selector = value
-        func = None
-
-    return selector, func
+from packages import parsel
 
 
+class Content(object):
 
-class BaseParser(object):
+    def __init__(self, url, content):
 
-    def __init__(self, content):
+        if not url:
+            raise RuntimeError('The url cannot be null')
+
+        if not isinstance(url, (str, unicode)):
+            raise RuntimeError('The url shall be string or unicode')
+
+        self._url = url
 
         if not content:
             raise RuntimeError('The content cannot be Null')
 
         if not isinstance(content, (str, unicode)):
-            raise RuntimeError('The contant shall be string or unicode')
+            raise RuntimeError('The content shall be string or unicode')
+
+        if not isinstance(content, unicode):
+            content = unicode(content)
 
         self._content = content
 
 
-    def __str__(self):
+    def extract(self):
+
         return self._content
 
 
-
-class XPathParser(BaseParser):
-
-    def select(self, criteria):
-        ''' select content by xpath criteria
+    def make_links_absolute(self):
+        ''' make links absolute in the content
         '''
-        root = ET.fromstring(self._content)
-        return [ET.tostring(e, encoding="utf-8", method="html").strip() for e in root.findall(criteria)]
+        _content = html.fromstring(self._content)
+        _content.make_links_absolute(self._url)
+        self._content = html.tostring(_content)
+        return self._content
 
 
-    def remove(self, criteria):
-        ''' remove content by xpath criteria
+    def select(self, expr, method='xpath'):
+        ''' select content by xpath
+
+        method can be xpath or css
         '''
-        root = ET.fromstring(self._content)
-        founded_elements = [e for e in root.findall(criteria)]
-        for r_elem in root.iter():
-            res = [r_elem.remove(fe) for fe in founded_elements if fe in list(r_elem)]
-        self._content = ET.tostring(root, encoding="utf-8", method="html")
-        return self
+        selector = parsel.Selector(self._content)
+
+        result = None
+        if method == 'xpath':
+            result = selector.xpath(expr)
+
+        if method == 'css':
+            result = selector.css(expr)
+
+        return result
 
 
-class CCSSelectParser(BaseParser):
-
-    def __init__(self, content):
-
-        super(CCSSelectParser, self).__init__(content)
-        self._soup = BS4(self._content, builder=HTMLParserTreeBuilder())
-
-
-    def __str__(self):
-
-        return str(self._soup)
-
-
-    def __unicode__(self):
-
-        return unicode(self._soup)
-
-
-    def select(self, criteria, func=None):
-        ''' select content by criteria
-
-        func - if not None, perform func call for all selections
-        html - if True, for each selection will be applied unicode()
-        merge - if True, return all selections as single BeautifulSoup instance
+    def remove(self, expr, method='xpath'):
+        ''' remove content by xpath expression
         '''
-        result = [r for r in self._soup.select(criteria)]
+        _content = html.fromstring(self._content)
 
-        if func:
-            result = map(lambda r: func(r), result)
+        if method == 'xpath':
+            selected = _content.xpath(expr)
 
-        result = map(lambda r: unicode(r), result)
-        self._soup = BS4('\n'.join(result), builder=HTMLParserTreeBuilder())
+        if method == 'css':
+            selected = _content.cssselect(expr)
 
-        return self
+        if not selected:
+            return self
+
+        for tag in selected:
+            tag.getparent().remove(tag)
+
+        return Content(self._url, html.tostring(_content))
 
 
-
-    def remove(self, criteria):
-        ''' remove content by criteria
+    def _load_profile(self, profile):
+        ''' load profile from yaml file
         '''
-        for res in self._soup.select(criteria):
-            res.decompose()
-        return self
+        _profile = yaml.load(profile)
+        if not _profile:
+            raise RuntimeError('Empty profile')
+        return _profile
 
 
-    def transform(self, rules):
-        ''' transform content according to rules
+    def transform(self, profile):
+        ''' transform content according to rules in the profile
         '''
-        _rules = yaml.load(rules)
-        if not 'rules' in _rules:
-            raise RuntimeError('Rules section is missed in rules file')
+        _profile = self._load_profile(profile)
+        if not 'rules' in _profile:
+            raise RuntimeError('Rules section is missed in the profile')
 
-        for rule in _rules['rules']:
+        _content = Content(self._url, self.extract())
+        for rule in _profile['rules']:
             if 'select' in rule:
-                self.select(*parse_selector(rule['select']['selector']))
+                selections = _content.select(rule['select']['expr'], method=rule['select']['method'])
+                _content = Content(self._url, '\n'.join(map(lambda s: s.extract(), selections)))
                 continue
             if 'remove' in rule:
-                self.remove(rule['remove']['selector'])
+                _content = _content.remove(rule['remove']['expr'], method=rule['remove']['method'])
                 continue
 
-        return self
+        return _content
 
 
-    def fields(self, rules):
-        ''' extract info from the content and return key/values
+    def fields(self, profile):
+        ''' select fields from the content according to rules in the profile
         '''
-        _rules = yaml.load(rules)
-        if not 'fields' in _rules:
-            raise RuntimeError('Fields section is missed in rules file')
+        _profile = self._load_profile(profile)
+        if not 'fields' in _profile:
+            raise RuntimeError('Fields section is missed in the profile')
 
-        _orig_soup = self._soup
-        result = dict()
-        for rule in _rules['fields']:
-            criteria, func = parse_selector(rule['selector'])
-            result[rule['name']] = unicode(self.select(criteria, func))
-            self._soup = _orig_soup
-        return result
+        fields = dict()
+        for field in _profile['fields']:
+            if field.get('name') and field.get('xpath'):
+                fields[field['name']] = self.select(field['xpath'], method='xpath').extract()
+
+        return fields
