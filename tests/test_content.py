@@ -125,15 +125,15 @@ def test_content_fields():
     }
 
 
-def test_content_empty_profile():
-
-    content = Content(BASE_URL, CONTENT)
-
-    with pytest.raises(RuntimeError) as err:
-        content.transform("").extract() == ''
-
-    with pytest.raises(RuntimeError) as err:
-        content.transform(EMPTY_PROFILE).extract() == ''
-
-    with pytest.raises(RuntimeError) as err:
-        content.fields(EMPTY_PROFILE) == {}
+# def test_content_empty_profile():
+#
+#     content = Content(BASE_URL, CONTENT)
+#
+#     with pytest.raises(RuntimeError) as err:
+#         content.transform("").extract() == ''
+#
+#     with pytest.raises(RuntimeError) as err:
+#         content.transform(EMPTY_PROFILE).extract() == ''
+#
+#     with pytest.raises(RuntimeError) as err:
+#         content.fields(EMPTY_PROFILE) == {}
