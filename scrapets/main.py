@@ -3,6 +3,7 @@ import __init__
 import os
 import sys
 import json
+import codecs
 
 from packages import click
 
@@ -75,7 +76,8 @@ def fetch(ctx, **opts):
     elif opts['urls']:
         urls = opts['urls'].readlines()
 
-    urls = [u.strip() for u in urls if utils.sha256str(u.strip()) not in metadata_index.keys()]
+    urls = [u.strip() for u in urls \
+            if utils.sha256str(u.strip()) not in metadata_index.keys() and u.strip()]
 
     fetcher = fetch.Fetcher(opts['path'], user_agent=opts['user_agent'])
     for url in urls:
@@ -116,43 +118,93 @@ def linkextract(ctx, **opts):
 
 
 @cli.command()
-@click.option('--action', type=click.Choice(['select', 'remove', 'transform', 'fields']), help='content processing action')
+@click.option('--action', type=click.Choice(['select', 'remove']), help='content processing action')
 # @click.option('--xpath', help='xpath for the action')
-@click.option('--selector', help='Selector for the action, the format: <ccs selector>::<lambda func>')
-@click.option('--rules', help='The rules for actions "transform" and "fields", yaml file')
+@click.option('--expr', help='XPath/CSS expression for the action.' + \
+                            'The format: <method>:<expr>, where method = xpath | css. ' + \
+                            'Example: xpath:./title/text()')
+@click.option('--profile', help='The profile for actions "transform" and "fields", yaml file')
 @click.option('--path', type=click.Path(exists=True), help='the path to the file or directory for processing')
 @click.pass_context
 def content(ctx, **opts):
     ''' content processing
     '''
-    def process(action, path, rules=None, selector=None, func=None):
+    def process(action, path, expr=None, profile=None):
 
-        cntnt = content.CCSSelectParser(open(path).read())
-        if action == 'select':
-            print json.dumps(unicode(cntnt.select(selector, func)))
-        elif action == 'remove':
-            print json.dumps(unicode(cntnt.remove(selector)))
-        elif action == 'transform':
-            print json.dumps(unicode(cntnt.transform(rules)))
-        elif action == 'fields':
-            print json.dumps(unicode(cntnt.fields(rules)))
+        _content = content.Content('content', codecs.open(path, 'r', 'utf-8').read())
+
+        if expr:
+            method, expr = expr.split(':', 1)
+            if method not in ('xpath', 'css'):
+                show_help(ctx)
+
+            if action == 'select':
+                print json.dumps(_content.select(expr, method).extract())
+            elif action == 'remove':
+                print json.dumps(_content.remove(expr, method).extract())
+
+        if profile:
+            result = _content.process(profile)
+            if isinstance(result, content.Content):
+                print json.dumps(result.extract())
+            elif isinstance(result, dict):
+                print json.dumps(result)
+            else:
+                raise RuntimeError('Unknown result type, %s' % type(result))
 
     if not opts['path']:
         show_help(ctx)
-    if opts['action'] in ('select', 'remove') and not opts['selector']:
-        show_help(ctx)
-    if opts['action'] in ('transform', 'fields') and not opts['rules']:
+    if opts['action'] in ('select', 'remove') and not opts['expr']:
         show_help(ctx)
 
     import content
 
-    rules = None
-    if os.path.exists(opts['rules']):
-        rules = open(opts['rules']).read()
+    _profile = None
+    if opts['profile'] and os.path.exists(opts['profile']):
+        _profile = codecs.open(opts['profile'], 'r', 'utf-8').read()
 
     for path in walk(opts['path']):
+        process(opts['action'], path, expr=opts['expr'], profile=_profile)
         try:
-            selector, func = content.parse_selector(opts['selector'])
-            process(opts['action'], path, rules=rules, selector=selector, func=func)
+            pass
         except Exception, err:
             print >> sys.stderr, "[ERROR] Cannot process the file, %s. Error: %s" % (path, err)
+
+
+@cli.command()
+@click.option('--path', help='the path to the metadata file')
+@click.option('--import-from', type=click.Path(exists=True), help='the path to the JSONline file for import')
+@click.option('--export-to', type=click.Path(), help='the path to the JSONline file for export')
+@click.option('--key-name', type=str, help='the key name, mandatory for import/export')
+@click.pass_context
+def metadata(ctx, **opts):
+    ''' metadata processing
+    '''
+    from packages.sqlitedict import SqliteDict
+    with SqliteDict(opts['path'], autocommit=True) as _data:
+
+        if opts['import_from'] and os.path.exists(opts['import_from']) and opts['key_name']:
+            print "[INFO] Import from %s" % opts['import_from']
+            with codecs.open(opts['import_from'], 'r', 'utf-8') as _in:
+                for line in _in:
+                    if not line.strip():
+                        continue
+                    try:
+                        _rec = json.loads(line)
+                    except:
+                        continue
+                    if not _rec.get(opts['key_name']):
+                        continue
+                    _data[_rec.pop(opts['key_name'])] = _rec
+            return
+
+        if opts['export_to'] and opts['key_name']:
+            print "[INFO] Export to %s" % opts['export_to']
+            with codecs.open(opts['export_to'], 'w', 'utf-8') as _out:
+                for k, v in _data.items():
+                    _rec = { opts['key_name']: k }
+                    _rec.update(v)
+                    _out.write("%s\n" % json.dumps(_rec))
+            return
+
+    show_help(ctx)
