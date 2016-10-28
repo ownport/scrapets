@@ -63,31 +63,20 @@ RESULT_STATUS_404_DETAIL = {
 #   Mocks
 #
 
-class MockedRequest(object):
+def get(url, headers, stream=True):
 
-    def __init__(self, url, headers):
-
-        self._url = url
-        self._headers = headers
-
-    def get(self):
-
-        return self
-
-    def send(self, stream=False):
-
-        if self._url == SUCCESS_URL:
-            return MockedResponse(code=200, body=StringIO('MockedResponse200'))
-        elif self._url == NONE_URL:
-            return MockedResponse(code=404, body=StringIO('MockedResponse404'))
+    if url == SUCCESS_URL:
+        return MockedResponse(code=200, raw=StringIO('MockedResponse200'))
+    elif url == NONE_URL:
+        return MockedResponse(code=404, raw=StringIO('MockedResponse404'))
 
 
 class MockedResponse(object):
 
-    def __init__(self, code, body):
+    def __init__(self, code, raw):
 
-        self.code = code
-        self.body = body
+        self.status_code = code
+        self.raw = raw
 
 # -------------------------------------------------------------
 #
@@ -110,7 +99,7 @@ def test_fetch_path_does_not_exist():
 
 def test_fetch_single_url(tmpdir, monkeypatch):
 
-    monkeypatch.setattr("scrapets.packages.reqres.Request", lambda url, headers: MockedRequest(url, headers))
+    monkeypatch.setattr("requests.get", lambda url, headers, stream: get(url, headers, stream))
 
     path = str(tmpdir)
     testcase_result = copy.copy(RESULT_STATUS_200_SHORT)
@@ -122,7 +111,7 @@ def test_fetch_single_url(tmpdir, monkeypatch):
 
 def test_fetch_single_url_pairtree(tmpdir, monkeypatch):
 
-    monkeypatch.setattr("scrapets.packages.reqres.Request", lambda url, headers: MockedRequest(url, headers))
+    monkeypatch.setattr("requests.get", lambda url, headers, stream: get(url, headers, stream))
 
     path = str(tmpdir)
     testcase_result = copy.copy(RESULT_STATUS_200_SHORT)
@@ -134,14 +123,14 @@ def test_fetch_single_url_pairtree(tmpdir, monkeypatch):
 
 def test_fetch_return_error_result(tmpdir, monkeypatch):
 
-    monkeypatch.setattr("scrapets.packages.reqres.Request", lambda url, headers: MockedRequest(url, headers))
+    monkeypatch.setattr("requests.get", lambda url, headers, stream: get(url, headers, stream))
     fetcher = Fetcher(str(tmpdir))
     assert fetcher.fetch(NONE_URL) == RESULT_STATUS_404_SHORT
 
 
 def test_fetch_single_url_meta_detail(tmpdir, monkeypatch):
 
-    monkeypatch.setattr("scrapets.packages.reqres.Request", lambda url, headers: MockedRequest(url, headers))
+    monkeypatch.setattr("requests.get", lambda url, headers, stream: get(url, headers, stream))
 
     path = str(tmpdir)
     testcase_result = copy.copy(RESULT_STATUS_200_DETAIL)
