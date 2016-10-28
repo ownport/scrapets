@@ -1,12 +1,12 @@
 
 import os
+import requests
 
 from errors import PathDoesNotExist
 
 from storage import utils
 from storage.fileobject import FileObject
 
-from packages import reqres
 
 DEFAULT_USER_AGENT='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:44.0) Gecko/20100101 Firefox/44.0'
 
@@ -37,16 +37,16 @@ class Fetcher():
         '''
         filepath = utils.pairtree(utils.sha256str(url)) if pairtree else utils.sha256str(url)
         filepath = os.path.join(self._path, filepath)
-        request = reqres.Request(url=url, headers={'User-Agent': self._user_agent})
-        resp = request.get().send(stream=True)
+
+        response = requests.get(url=url, headers={'User-Agent': self._user_agent}, stream=True)
 
         sha256url = utils.sha256str(url)
 
         result = { 'url': url, 'url.sha256': sha256url, 'status.code': None, }
 
-        if resp.code == 200:
+        if response.status_code == 200:
             fo = FileObject(filepath)
-            fo.write(resp.body)
+            fo.write(response.raw)
 
             filemeta = fo.meta
             result['file.path'] = filepath
@@ -56,6 +56,6 @@ class Fetcher():
 
         if meta == 'detail':
             result['url.pairtree'] = utils.pairtree(sha256url)
-        result['status.code'] = resp.code
+        result['status.code'] = response.status_code
 
         return result
