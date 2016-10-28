@@ -1,9 +1,20 @@
+# -*- coding: utf-8 -*-
 
 from lxml import html
 
 from packages import yaml
 
 from packages import parsel
+
+
+def join_by(sep, lst):
+    return sep.join(lst)
+
+def strip(v):
+    return v.strip()
+
+def foreach(lst, func):
+    return map(lambda x: func(x), lst)
 
 
 class Content(object):
@@ -95,7 +106,7 @@ class Content(object):
         '''
         _profile = self._load_profile(profile)
         if not 'rules' in _profile:
-            raise RuntimeError('Rules section is missed in the profile')
+            return self
 
         _content = Content(self._url, self.extract())
         for rule in _profile['rules']:
@@ -115,11 +126,25 @@ class Content(object):
         '''
         _profile = self._load_profile(profile)
         if not 'fields' in _profile:
-            raise RuntimeError('Fields section is missed in the profile')
+            return self
+
+        from packages.parsel.utils import flatten, iflatten
 
         fields = dict()
         for field in _profile['fields']:
             if field.get('name') and field.get('xpath'):
                 fields[field['name']] = self.select(field['xpath'], method='xpath').extract()
+                if field.get('method'):
+                    try:
+                        _ = self.select(field['xpath'], method='xpath')
+                        fields[field['name']] = eval(field['method'])
+                    except AttributeError:
+                        pass
 
         return fields
+
+
+    def process(self, profile):
+
+        _content = self.transform(profile)
+        return _content.fields(profile)
